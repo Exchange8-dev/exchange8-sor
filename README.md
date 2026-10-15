@@ -1,17 +1,17 @@
-# README.md: Ex8:SOR
+# README.md: Exchange8:SOR
 
 ## 1. Summary
 
-Ex8:SOR (service type `exchange8:sor`, binary `exchange8-sor`) is the
+Exchange8:SOR (service type `exchange8:sor`, binary `exchange8-sor`) is the
 **smart order router** of the exchange8 vertical — the capital-markets
 tier of the Sentin8 platform. It routes orders to external venues and
-home again: it consumes routing requests from Ex8:Gateway, interprets the
+home again: it consumes routing requests from Exchange8:Gateway, interprets the
 **9-digit strategy code** (`[DD][C][LLLL][PP]` — dark option, mode
 selector, lit option, post option), walks venue liquidity through the
 phase arc **RADAR → SPRAY → SEQUENTIAL → POST** (dark midpoint pegs, a
 parallel IOC sweep priced at the consolidated best bid/offer, a one-venue-
 at-a-time price walk toward the limit, then a resting remainder posted to
-the post venue or back to Ex8:ME), and reconciles venue executions back
+the post venue or back to Exchange8:ME), and reconciles venue executions back
 to platform orders through the routed-order ledger. Venue ordering is
 charge-driven: a stable, charge-sorted selection (ties broken by venue id)
 picks the cheapest venues first. Outbound venue sessions are supervised
@@ -74,15 +74,15 @@ plane (`sql/init.sql` — schema `sor` on database `exchange8`).
 ```mermaid
 graph TD
     subgraph Upstream["Upstream callers and feeds"]
-        GW["Ex8:Gateway (route requests, re-posts, admin surfaces)"]
-        VFE["Ex8:VFeeds (STAMP CBBO quotes)"]
+        GW["Exchange8:Gateway (route requests, re-posts, admin surfaces)"]
+        VFE["Exchange8:VFeeds (STAMP CBBO quotes)"]
         VEN["External venues (FIX 4.x)"]
         ADM["Exchange admin (Sentin8:Dash RFW via Sentin8:BFF)"]
-        MES["Ex8:ME (internal post target for POST phase)"]
-        CLR["Ex8:Clearing (routed trade mirror)"]
+        MES["Exchange8:ME (internal post target for POST phase)"]
+        CLR["Exchange8:Clearing (routed trade mirror)"]
     end
 
-    subgraph SOR["Ex8:SOR process (exchange8-sor)"]
+    subgraph SOR["Exchange8:SOR process (exchange8-sor)"]
         HTTP["axum surface: /v1/health + Shield admin API (/v1/admin/policy-sets, /v1/admin/relations, /v1/admin/attributes)"]
         DEC["Decision core: StrategyCode parse · entry_phase / next_phase · spray_leg · select_venues (charge sort)"]
         LED["routing.rs — SorPhase + RoutedLedger (parents, legs, fills, reconcile)"]

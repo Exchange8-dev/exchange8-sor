@@ -1,25 +1,25 @@
-# DESIGN.md: Ex8:SOR — Detailed Design Document
+# DESIGN.md: Exchange8:SOR — Detailed Design Document
 
 ## 1. Scope & Context
 
-Ex8:SOR owns smart order routing for one environment: the 9-digit
+Exchange8:SOR owns smart order routing for one environment: the 9-digit
 strategy-code model and its phase machine, routed-order and leg facts,
 the outbound venue session registry (connections, tokens, marketable
 options, market slices), the banded venue-charge lookup, and routed
 trade records with their amendment flow. It explicitly does **not** own:
 
-- client protocols and sessions — Ex8:Gateway terminates FIX/OUCH/REST
+- client protocols and sessions — Exchange8:Gateway terminates FIX/OUCH/REST
   and calls SOR with already-authorized orders; SOR authorizes nothing
   about the *client*;
 - matching — the POST phase's internal target re-posts the remainder to
-  Ex8:ME through the Gateway re-post path; SOR never matches;
-- venue market data — Ex8:VFeeds feeds quotes (STAMP CBBO); SOR
+  Exchange8:ME through the Gateway re-post path; SOR never matches;
+- venue market data — Exchange8:VFeeds feeds quotes (STAMP CBBO); SOR
   subscribes and consumes;
-- order-entry rate/credit authorization — Ex8:Risk gates the pipeline
+- order-entry rate/credit authorization — Exchange8:Risk gates the pipeline
   before SOR sees the order;
 - fix protocol/codec internals — `crates/fix`, `crates/fixed`,
   `crates/stamp` own the engines SOR reuses;
-- trade clearing and routed-trade mirroring — Ex8:Clearing consumes the
+- trade clearing and routed-trade mirroring — Exchange8:Clearing consumes the
   `exchange8:routing:*` events and persists its own mirror;
 - event durability, audit archival, identity, TLS — platform planes
   (Sentin8:Bus, Sentin8:Sys, Sentin8:Auth, `sentin8-tls`, Shield).
@@ -29,12 +29,12 @@ trade records with their amendment flow. It explicitly does **not** own:
 ```mermaid
 graph TD
     subgraph Env["exchange8 environment (one env_id per tenant env)"]
-        GW["Ex8:Gateway (route requests, re-posts)"]
-        SOR["Ex8:SOR (exchange8-sor)"]
-        VF["Ex8:VFeeds (STAMP CBBO quotes)"]
-        ME["Ex8:ME (internal post target)"]
-        CLR["Ex8:Clearing (routed-trade mirror)"]
-        REF["Ex8:RefData (instruments, tick tables — consumed, not owned)"]
+        GW["Exchange8:Gateway (route requests, re-posts)"]
+        SOR["Exchange8:SOR (exchange8-sor)"]
+        VF["Exchange8:VFeeds (STAMP CBBO quotes)"]
+        ME["Exchange8:ME (internal post target)"]
+        CLR["Exchange8:Clearing (routed-trade mirror)"]
+        REF["Exchange8:RefData (instruments, tick tables — consumed, not owned)"]
         VEN["External venues (FIX 4.x)"]
     end
     AUTH["Sentin8:Auth (issuer, JWKS, DCR)"]
@@ -164,7 +164,7 @@ graph TD
 ```mermaid
 sequenceDiagram
     autonumber
-    participant GW as Ex8:Gateway
+    participant GW as Exchange8:Gateway
     participant AU as Auth verify + Shield (steps 1–5)
     participant SC as StrategyCode parse
     participant EP as entry_phase / next_phase
@@ -236,7 +236,7 @@ sequenceDiagram
     participant RL as RoutedLedger
     participant OB as sor.outbox + relay
     participant BUS as Sentin8:Bus
-    participant CLR as Ex8:Clearing
+    participant CLR as Exchange8:Clearing
 
     V->>FS: execution report (trade, qty, price, liquidity A/R)
     FS->>RL: on_leg_fill(leg_id, qty)
@@ -256,7 +256,7 @@ sequenceDiagram
 sequenceDiagram
     autonumber
     participant UI as Admin (Sentin8:Dash → Sentin8:BFF)
-    participant SOR as Ex8:SOR admin routes
+    participant SOR as Exchange8:SOR admin routes
     participant SH as Shield cache (SharedAdminState)
     participant DBX as sor schema + sor.outbox / sor.audit_journal
 
@@ -501,10 +501,10 @@ Emitted events use the `exchange8:{service}:{resource}:{operation}`
 vocabulary (colons only): the `exchange8:routing:*` leg/trade routing
 event family and routed-order lifecycle facts (per-change `event_type`
 mapping into `sor.outbox` — see §10 for the writer surface). Inbound:
-route/reject requests and leg events from Ex8:Gateway, quotes from the
+route/reject requests and leg events from Exchange8:Gateway, quotes from the
 STAMP CBBO feed (VFeeds), posted-order completions re-entering from the
 Gateway re-post path, and Shield policy-set updates via the shared
-policy consumer. The clearing-side mirror events consumed by Ex8:Clearing
+policy consumer. The clearing-side mirror events consumed by Exchange8:Clearing
 are declared in the vertical's event registry.
 
 ### Multi-party: client → sor → me/gateway → clearing
@@ -513,12 +513,12 @@ are declared in the vertical's event registry.
 sequenceDiagram
     autonumber
     participant MP as Market participant (FIX/OUCH/REST)
-    participant GWY as Ex8:Gateway
-    participant SORS as Ex8:SOR
+    participant GWY as Exchange8:Gateway
+    participant SORS as Exchange8:SOR
     participant VEN as External venue (FIX)
-    participant MES as Ex8:ME (internal post)
+    participant MES as Exchange8:ME (internal post)
     participant BUSX as Sentin8:Bus
-    participant CLRS as Ex8:Clearing
+    participant CLRS as Exchange8:Clearing
 
     MP->>GWY: parent order (session-authenticated)
     GWY->>SORS: route request (order + strategy code, M2M exchange8:sor:decide)
@@ -559,8 +559,8 @@ flowchart TD
     E -->|network / 5xx| G["relay_attempts++; leave unrelayed; backoff retry"]
     G --> E
     F --> H["Bus stream: exchange8:routing family (XADD)"]
-    H -->|direct consumer| I1["Ex8:Clearing — routed trade + amend mirror"]
-    H -->|direct consumer| I2["Ex8:Gateway — session-attached leg events to clients"]
+    H -->|direct consumer| I1["Exchange8:Clearing — routed trade + amend mirror"]
+    H -->|direct consumer| I2["Exchange8:Gateway — session-attached leg events to clients"]
     H -->|subscription| I3["Trigger subscription (consumer group) → function / workflow where declared"]
 ```
 
@@ -593,7 +593,7 @@ flowchart TD
   over-aggregate the parent ledger.
 - **Rate limiting / bot protection.** This service routes already
   authorized flow; per-connection throttling belongs upstream
-  (Ex8:Gateway/Ex8:Risk). The service's own surfaces rely on
+  (Exchange8:Gateway/Exchange8:Risk). The service's own surfaces rely on
   platform-level protections (Shield + BFF posture); no bespoke rate
   limiter is mounted here.
 - **Audit journaling.** Domain/admin changes ride `sor.audit_journal`

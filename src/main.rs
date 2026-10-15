@@ -3,7 +3,7 @@
 // SPDX-FileCopyrightText: Copyright Contributors to the Exchange8:SOR
 // SPDX-License-Identifier: Apache-2.0
 
-//! Ex8:SOR service binary — smart order routing.
+//! Exchange8:SOR service binary — smart order routing.
 //!
 //! Design: `services/sor/DESIGN.md`. Core logic in the sibling modules;
 //! this shell wires the tokio HTTP/TLS surface via the platform

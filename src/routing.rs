@@ -3,7 +3,7 @@
 // SPDX-FileCopyrightText: Copyright Contributors to the Exchange8:SOR
 // SPDX-License-Identifier: Apache-2.0
 
-//! Ex8:SOR routing internals (see DESIGN.md §2–§3).
+//! Exchange8:SOR routing internals (see DESIGN.md §2–§3).
 //!
 //! - **Phase machine**: the full RADAR → SPRAY → SEQUENTIAL → POST arc
 //!   with venue-failure transitions.

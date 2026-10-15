@@ -3,7 +3,7 @@
 // SPDX-FileCopyrightText: Copyright Contributors to the Exchange8:SOR
 // SPDX-License-Identifier: Apache-2.0
 
-//! Ex8:SOR outbound venue sessions + VFeeds STAMP CBBO adapter.
+//! Exchange8:SOR outbound venue sessions + VFeeds STAMP CBBO adapter.
 //!
 //! - **Venue sessions**: outbound venue FIX sessions — the session
 //!   supervisor state (per-venue logon/heartbeat/test-request/queue

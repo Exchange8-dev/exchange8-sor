@@ -1,7 +1,7 @@
-# BUSINESS.md: Ex8:SOR — Business Requirements & Functionality
+# BUSINESS.md: Exchange8:SOR — Business Requirements & Functionality
 
 > Audience: product owners, business analysts, and anyone evaluating what
-> Ex8:SOR **does for the business**. For architecture read `README.md`;
+> Exchange8:SOR **does for the business**. For architecture read `README.md`;
 > for wire-level detail read `DESIGN.md`.
 
 ## 1. Business Purpose
@@ -49,14 +49,14 @@
 
 | Concern | Owning service |
 |---|---|
-| Client connectivity, sessions, protocol translation (FIX, OUCH, REST) | Ex8:Gateway |
-| Order-entry validation, rate and credit authorization | Ex8:Risk |
-| Matching, order books, fill allocation (the internal book) | Ex8:ME |
-| Parent order instruction, allocation, drop copy | Ex8:OMS |
-| Venue market data parsing and dissemination | Ex8:VFeeds |
-| Trade clearing, netting, routed-trade mirroring | Ex8:Clearing |
-| Exchange instruments and rules-of-the-road reference data | Ex8:RefData |
-| Pre-trade margining and position risk | Ex8:Margin |
+| Client connectivity, sessions, protocol translation (FIX, OUCH, REST) | Exchange8:Gateway |
+| Order-entry validation, rate and credit authorization | Exchange8:Risk |
+| Matching, order books, fill allocation (the internal book) | Exchange8:ME |
+| Parent order instruction, allocation, drop copy | Exchange8:OMS |
+| Venue market data parsing and dissemination | Exchange8:VFeeds |
+| Trade clearing, netting, routed-trade mirroring | Exchange8:Clearing |
+| Exchange instruments and rules-of-the-road reference data | Exchange8:RefData |
+| Pre-trade margining and position risk | Exchange8:Margin |
 | FIX protocol codec and session engines (libraries) | `crates/fix`, `crates/fixed` (workspace libraries) |
 | Identity, token issuance, secrets | Sentin8:Auth / Sentin8:Secrets |
 | Declarative policy engine and its admin surface | Shield (Sentin8:Policy) |
@@ -132,9 +132,9 @@ Emitted via the platform event vocabulary
 | Fill proceeds to clearing | Every recorded venue trade is delivered durably so clearing mirrors the routed trade record |
 
 Inbound (consumed): route/reject requests and leg events from
-Ex8:Gateway, venue FIX acknowledgments and execution reports (sessions
+Exchange8:Gateway, venue FIX acknowledgments and execution reports (sessions
 driven by the `crates/fix` engine), STAMP CBBO quote frames from
-Ex8:VFeeds, posted-order lifecycle events returning from the internal
+Exchange8:VFeeds, posted-order lifecycle events returning from the internal
 re-post path, Shield policy-set updates via the shared policy consumer,
 and routing-configuration facts (tokens, options, connections, slices,
 charges).
@@ -191,7 +191,7 @@ charges).
 
 ## 6. Target-User Roles & Use Cases
 
-| Persona | Role | What they do with Ex8:SOR |
+| Persona | Role | What they do with Exchange8:SOR |
 |---|---|---|
 | Retail / institutional trader | Order submitter (via broker/OMS) | Sends one order with one strategy code; experiences the router only as better fill outcomes across venues |
 | Sell-side broker / execution desk | Execution strategist | Chooses strategy codes to express execution intent (hide first, sweep, walk, post) without building routing infrastructure |
@@ -232,10 +232,10 @@ charges).
 
 ## 8. Dependencies & Reliance
 
-- **Ex8:Gateway** — the sole routing counterpart: it delivers authorized
+- **Exchange8:Gateway** — the sole routing counterpart: it delivers authorized
   route requests and carries leg events to clients, re-posts internal
   remainders to the matching engine, and propagates client cancels.
-- **Ex8:VFeeds** — the consolidated quote fabric (STAMP CBBO frames) the
+- **Exchange8:VFeeds** — the consolidated quote fabric (STAMP CBBO frames) the
   phased pricing depends on; without a live consolidated price, CBBO-
   requiring phases wait rather than guess.
 - **External venues (FIX 4.x over mTLS)** — the liquidity counterpart;
@@ -244,11 +244,11 @@ charges).
 - **Workspace libraries** — `crates/fix` (session engine),
   `crates/fixed` (fixed-point math), `crates/stamp` (feed codec); the
   sor binary reuses them rather than reimplementing protocol layers.
-- **Ex8:ME / Ex8:Gateway re-post path** — the internal home for the
+- **Exchange8:ME / Exchange8:Gateway re-post path** — the internal home for the
   resting remainder when no post venue is configured.
-- **Ex8:Clearing** — the consumer of routed-trade events that mirrors
+- **Exchange8:Clearing** — the consumer of routed-trade events that mirrors
   venue executions; clearing reads events, never this schema.
-- **Ex8:RefData** — instrument identity, tick tables, and market
+- **Exchange8:RefData** — instrument identity, tick tables, and market
   structure that the phase walkers and price bands assume.
 - **Sentin8:Auth** — all identity issuance/verification; M2M workloads
   (`exchange8:sor`/`sor`, `sor-audit`, `exchange8-sor-tls`), cert-bound

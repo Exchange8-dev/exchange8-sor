@@ -3,7 +3,7 @@
 // SPDX-FileCopyrightText: Copyright Contributors to the Exchange8:SOR
 // SPDX-License-Identifier: Apache-2.0
 
-//! Ex8:SOR strategy-code parser + phase state machine.
+//! Exchange8:SOR strategy-code parser + phase state machine.
 //!
 //! Strategy code = 9 digits: `[DD][C][LLLL][PP]` — dark option (2), mode
 //! selector (1), lit option (4), post option (2).
