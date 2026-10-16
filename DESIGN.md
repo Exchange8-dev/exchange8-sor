@@ -209,20 +209,20 @@ sequenceDiagram
     T->>FIX: connect (per routing_connection row: comp ids, addr, port, heartbeat)
     FIX-->>VS: Connect event (Idle → LoggingOn)
     alt logon accepted
-        FIX-->>VS: LogonAccepted (LoggingOn → Up; routable)
+        FIX-->>VS: LogonAccepted (LoggingOn → Up, routable)
     else logon rejected
-        FIX-->>VS: LogonRejected (→ Down; reconnect loop re-enters)
+        FIX-->>VS: LogonRejected (→ Down, reconnect loop re-enters)
     end
     loop while Up
         FIX-->>VS: Heartbeat (stays Up)
-        FIX-->>VS: HeartbeatTimeout (Up → Probing; TestRequest in flight)
+        FIX-->>VS: HeartbeatTimeout (Up → Probing, TestRequest in flight)
         alt TestRequestOk
             FIX-->>VS: TestRequestOk (Probing → Up)
         else probe fails / disconnect
             FIX-->>VS: HeartbeatTimeout or Disconnect (→ Down)
         end
     end
-    Note over VS: duplicate events are idempotent no-ops; unknown venues are never routable
+    Note over T,V: duplicate events are idempotent no-ops, unknown venues are never routable
     Note over FIX: ResendBuffer replays unacked outbound messages in order on reconnect
 ```
 
@@ -241,7 +241,7 @@ sequenceDiagram
     V->>FS: execution report (trade, qty, price, liquidity A/R)
     FS->>RL: on_leg_fill(leg_id, qty)
     alt qty > leg remainder (drop-detect over-echo)
-        RL-->>RL: credit min(qty, leg remaining); leg completes at true size
+        RL-->>RL: credit min(qty, leg remaining), leg completes at true size
     end
     RL->>RL: aggregate leg fill into parent (Complete at ≥ parent qty)
     RL->>OB: same-tx INSERT routing_trade row + outbox event (exchange8:routing trade family)
@@ -260,14 +260,14 @@ sequenceDiagram
     participant SH as Shield cache (SharedAdminState)
     participant DBX as sor schema + sor.outbox / sor.audit_journal
 
-    UI->>SOR: admin surface (RFW page routing/legs; delegated bearer user token)
-    SOR->>SH: Shield evaluate (scope-mirror; tenant forbid wins)
+    UI->>SOR: admin surface (RFW page routing/legs, delegated bearer user token)
+    SOR->>SH: Shield evaluate (scope-mirror, tenant forbid wins)
     alt denied
         SOR-->>UI: 403 (fail-closed)
     else allowed
         SOR->>DBX: read/copy routing configuration or routed-order facts (RLS-scoped, same-connection context)
         SOR->>DBX: mutation + same-tx outbox/journal rows (configuration changes)
-        DBX-->>DBX: pg_notify sor_outbox_changed → relay; audit pusher → Sys
+        DBX-->>DBX: pg_notify sor_outbox_changed → relay, audit pusher → Sys
         SOR-->>UI: page payload (rendered by the RFW renderer)
     end
 ```
@@ -537,9 +537,9 @@ sequenceDiagram
         end
     else remainder posted internally
         SORS->>GWY: re-post remainder (POST phase, internal target)
-        GWY->>MES: posted order (re-validated; reject-on-pending-cancel kept)
+        GWY->>MES: posted order (re-validated, reject-on-pending-cancel kept)
         MES-->>GWY: posted-order lifecycle events
-        GWY-->>SORS: leg events (new gw leg id; Reposted)
+        GWY-->>SORS: leg events (new gw leg id, Reposted)
     end
     MP->>GWY: cancel (client cancel via Gateway)
     GWY->>SORS: cancel propagation
@@ -688,14 +688,14 @@ sequenceDiagram
     participant LED as RoutedLedger / VenueSessions / ResendBuffer
     participant BUSE as Sentin8:Bus
 
-    OPS->>SHELL: start (predecessor drained; sessions handed off per venue connection state)
+    OPS->>SHELL: start (predecessor drained, sessions handed off per venue connection state)
     SHELL->>DBX: load routing_token / routing_option / routing_connection / market_slice / trade_venue_charge
     SHELL->>DBX: rebuild working set from routed_order / routed_leg (+ trades)
     DBX-->>LED: ledger restored (states per table CHECK vocabulary)
     LED->>LED: reconcile() → unacked legs (cancel-sweep set) + orphaned legs (anomaly review)
-    SHELL->>VEN: reconnect sessions (Idle→LoggingOn→Up) ; ResendBuffer replays unacked in order
+    SHELL->>VEN: reconnect sessions (Idle→LoggingOn→Up) , ResendBuffer replays unacked in order
     SHELL->>DBX: reset relay: unrelayed sor.outbox rows
-    SHELL->>BUSE: POST /v1/produce (idempotency_key = row id; no duplicate delivery)
+    SHELL->>BUSE: POST /v1/produce (idempotency_key = row id, no duplicate delivery)
     SHELL-->>OPS: ready (health Active in captain registry)
 ```
 
