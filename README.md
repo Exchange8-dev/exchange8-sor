@@ -25,7 +25,6 @@ code parser (`sor.rs`), the phase machine and routed-order ledger
 (`venue_sessions.rs`) — wrapped in the shared Sentin8 platform shell
 (`sentin8::shell`): axum HTTP/TLS surface, `--print-registration`
 self-description, DB pool, `/v1/health`, the Shield (declarative-policy)
-admin API mount, mimalloc global allocator, and graceful drain. Event
 egress is the platform trio: in-process MemBus publication, the local
 `sor.outbox` relayed to Sentin8:Bus, and the `sor.audit_journal` pushed
 to Sentin8:Sys. Persistence is database `exchange8`, schema `sor`, role

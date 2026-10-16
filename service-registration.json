@@ -2,7 +2,11 @@
   "vertical": "exchange8",
   "services": [
     {
-      "service_type": "exchange8:sor"
+      "service_type": "exchange8:sor",
+      "telemetry_property": {
+        "slug": "sor",
+        "name": "Exchange8:SOR Telemetry"
+      }
     }
   ]
 }

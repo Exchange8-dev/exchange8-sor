@@ -100,7 +100,6 @@ graph TD
 The binary boots via `sentin8::shell::serve`:
 
 1. `Sentin8Shell::new("exchange8:sor", "EXCHANGE8_SOR")` — registration,
-   DB pool (`EXCHANGE8_SOR_DATABASE_URL`), `/v1/health`, mimalloc global
    allocator, graceful drain under `make upgrade-instance`.
 2. `with_simple_state()` — the shell's standard state handle; outbound
    venue FIX sessions run as **dedicated tasks** (the HTTP router carries
