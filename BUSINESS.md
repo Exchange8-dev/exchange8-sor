@@ -1,4 +1,4 @@
-# BUSINESS.md: Exchange8:SOR — Business Requirements & Functionality
+# Exchange8:SOR — Business Requirements & Functionality
 
 > Audience: product owners, business analysts, and anyone evaluating what
 > Exchange8:SOR **does for the business**. For architecture read `README.md`;

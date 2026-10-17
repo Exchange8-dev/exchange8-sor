@@ -1,4 +1,4 @@
-# DESIGN.md: Exchange8:SOR — Detailed Design Document
+# Exchange8:SOR — Detailed Design Document
 
 ## 1. Scope & Context
 
