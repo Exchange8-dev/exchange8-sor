@@ -13,6 +13,7 @@
 
 // (see the master design, sizing/allocation chapter). Workers (bus
 // consumers, session supervisors, purge jobs) are in-process tokio
+mod openapi;
 mod registration;
 mod routing;
 mod sor;
