@@ -17,7 +17,7 @@ use utoipa::OpenApi;
     get,
     path = "/v1/health",
     responses(
-        (status = 200, description = "Service is healthy", body = serde_json::Value),
+        (status = 200, description = "Service is healthy", body = sentin8::middleware::health::LiveHealth),
     ),
     security(),
     tag = "sor",
@@ -52,7 +52,9 @@ async fn health() {}
         sentin8::shell::policy_put_attribute,
         sentin8::shell::policy_delete_attribute,
     ),
-    components(schemas()),
+    components(schemas(
+        sentin8::middleware::health::LiveHealth,
+    )),
     security(),
     tags(
         (name = "sor", description = "Exchange8:Sor - policy admin + health only"),
