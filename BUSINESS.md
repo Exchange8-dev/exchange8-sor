@@ -1,4 +1,4 @@
-# Exchange8:SOR — Business Requirements & Functionality
+# Exchange8:SOR - Business Requirements & Functionality
 
 > Audience: product owners, business analysts, and anyone evaluating what
 > Exchange8:SOR **does for the business**. For architecture read `README.md`;
@@ -7,7 +7,7 @@
 ## 1. Business Purpose
 
 - Get participants the best execution the market offers: every routed
-  order is walked across venues in a deliberate, cost-aware sequence —
+  order is walked across venues in a deliberate, cost-aware sequence -
   hidden liquidity first when configured, a sweep of lit venues at the
   consolidated best price, a patient one-venue price walk, and a resting
   remainder posted where it has the best chance of working.
@@ -68,7 +68,7 @@
 
 | Capability | Business rule |
 |---|---|
-| 9-digit strategy code | Every routed order carries one code; it must be exactly 9 digits with resolvable dark, lit, and post option codes — an invalid code routes nothing and is rejected before any venue is touched |
+| 9-digit strategy code | Every routed order carries one code; it must be exactly 9 digits with resolvable dark, lit, and post option codes - an invalid code routes nothing and is rejected before any venue is touched |
 | Mode selector | Digit 3 picks the routing mode: internal only (0), spray (1), sequential (2), or spray+sequential (3); a none-mode order must declare no lit venues |
 | Dark access (RADAR) | When the dark option is configured, a live consolidated price exists, and a dark session is up, hidden midpoint pegs are submitted to each active dark venue (per-venue tag dialects preserved) |
 | Lit sweep (SPRAY) | With a live consolidated price, IOC legs sweep lit venues priced at the consolidated opposite side; a venue with a missing or worse price is skipped; each venue's leg is sized to what its top of book can take |
@@ -82,7 +82,7 @@
 | Capability | Business rule |
 |---|---|
 | Cheapest-first ordering | Venues are ordered by routing charge (a banded lookup by market, price band, and active flag); equal charges break by venue identifier, so identical inputs always produce identical leg plans |
-| Minimal fan-out | The router takes only the venues needed to cover the requested quantity — the cheapest covering set, nothing more |
+| Minimal fan-out | The router takes only the venues needed to cover the requested quantity - the cheapest covering set, nothing more |
 | Only live venues participate | A venue whose session is not fully-upped is excluded; routing continues on the remaining venues and the phase degrades only when a phase's entire venue set is gone |
 | Skip semantics | Session-down and quote-poor venues are skipped without killing the order; the order keeps its remaining quantity for the next phase |
 | Trade liquidity class | Venue fills are recorded as added-to or removed-from liquidity, preserving the economics each venue charges for |
@@ -93,7 +93,7 @@
 |---|---|
 | Session supervision | Each outbound venue link is supervised from cold start through logon, heartbeats, probe requests on missed heartbeats, and reconnection after failure |
 | Only a fully-up session routes | An order never reaches a venue whose session is logging on, probing, or down |
-| Automatic resend | Unacknowledged outbound messages are held per session and replayed in order on reconnect — venue sequence discipline is maintained, not negotiated by hand |
+| Automatic resend | Unacknowledged outbound messages are held per session and replayed in order on reconnect - venue sequence discipline is maintained, not negotiated by hand |
 | Credentials by reference | Venue logon credentials are stored as secret references, never in plaintext |
 | Session controls | Operations can enable or disable connections and reset venue sequences administratively |
 | Symbol partitioning | Venue sessions are keyed per market × broker × first-letter symbol slice, so venue load and configuration are partitionable by symbol |
@@ -103,7 +103,7 @@
 | Capability | Business rule |
 |---|---|
 | Parent-child ledger | Every routed parent tracks its legs (per-venue child order ids `parent-leg-sequence`), with fills aggregating upward and kills releasing unfilled quantity for re-routing |
-| Overfill protection | A venue echoing more quantity than the leg carries completes the leg at its true size — duplicated or over-reported echoes can never inflate the parent |
+| Overfill protection | A venue echoing more quantity than the leg carries completes the leg at its true size - duplicated or over-reported echoes can never inflate the parent |
 | Kill & re-route | A rejected, cancelled, or lost leg frees its unfilled remainder for the next venue or phase |
 | Reconciliation views | Legs routed but never acknowledged (the recovery cancel-sweep set) and legs without a known parent (orphans) are surfaced explicitly for operations |
 | Amendment trail | Venue fills can be amended in quantity or price; both versions are retained with who amended and when |
@@ -122,7 +122,7 @@
 ## 4. Business Events (Outbound)
 
 Emitted via the platform event vocabulary
-(`exchange8:{service}:{resource}:{operation}`, colons only — the
+(`exchange8:{service}:{resource}:{operation}`, colons only - the
 `exchange8:routing` event family into durable outbox):
 
 | Event family | When it fires |
@@ -157,7 +157,7 @@ charges).
    required) rather than routing blind.
 5. **Legs are sized to the venue.** A sweep leg never exceeds what the
    venue's top of book holds, and a venue priced worse than the
-   consolidated market is skipped — no chasing inferior prices on the
+   consolidated market is skipped - no chasing inferior prices on the
    sweep.
 6. **Parent totals can never exceed the order.** Venue fills are capped
    at the leg remainder; over-reported or duplicated echoes complete the
@@ -209,12 +209,12 @@ charges).
   trip), so routing adds no perceptible delay to order entry.
 - **Execution quality**: phase coverage and charge-sorted selection
   demonstrably capture the best available venue prices (same
-  quote/order sequence reproduces the same leg plan — reproducible for
+  quote/order sequence reproduces the same leg plan - reproducible for
   best-execution review).
 - **Leg throughput**: the venue sustains design load (thousands of
   routed orders per environment per day, up to 200 live venue sessions)
   with headroom.
-- **Reconciliation coverage**: zero stranded legs — every unacked leg is
+- **Reconciliation coverage**: zero stranded legs - every unacked leg is
   captured by a cancel sweep and every orphan is surfaced to operations.
 - **Session availability**: venue sessions reconnect automatically with
   resend replay; routing skips failed venues with no order-level
@@ -232,38 +232,38 @@ charges).
 
 ## 8. Dependencies & Reliance
 
-- **Exchange8:Gateway** — the sole routing counterpart: it delivers authorized
+- **Exchange8:Gateway** - the sole routing counterpart: it delivers authorized
   route requests and carries leg events to clients, re-posts internal
   remainders to the matching engine, and propagates client cancels.
-- **Exchange8:VFeeds** — the consolidated quote fabric (STAMP CBBO frames) the
+- **Exchange8:VFeeds** - the consolidated quote fabric (STAMP CBBO frames) the
   phased pricing depends on; without a live consolidated price, CBBO-
   requiring phases wait rather than guess.
-- **External venues (FIX 4.x over mTLS)** — the liquidity counterpart;
+- **External venues (FIX 4.x over mTLS)** - the liquidity counterpart;
   logon credentials are secret references and per-venue tag dialects
   ride routing configuration.
-- **Workspace libraries** — `crates/fix` (session engine),
+- **Workspace libraries** - `crates/fix` (session engine),
   `crates/fixed` (fixed-point math), `crates/stamp` (feed codec); the
   sor binary reuses them rather than reimplementing protocol layers.
-- **Exchange8:ME / Exchange8:Gateway re-post path** — the internal home for the
+- **Exchange8:ME / Exchange8:Gateway re-post path** - the internal home for the
   resting remainder when no post venue is configured.
-- **Exchange8:Clearing** — the consumer of routed-trade events that mirrors
+- **Exchange8:Clearing** - the consumer of routed-trade events that mirrors
   venue executions; clearing reads events, never this schema.
-- **Exchange8:RefData** — instrument identity, tick tables, and market
+- **Exchange8:RefData** - instrument identity, tick tables, and market
   structure that the phase walkers and price bands assume.
-- **Sentin8:Auth** — all identity issuance/verification; M2M workloads
+- **Sentin8:Auth** - all identity issuance/verification; M2M workloads
   (`exchange8:sor`/`sor`, `sor-audit`, `exchange8-sor-tls`), cert-bound
   by default.
-- **Shield (Sentin8:Policy)** — the only authorization gate; the seeded
+- **Shield (Sentin8:Policy)** - the only authorization gate; the seeded
   scope-mirror set is the service's declared contract; the admin surface
   shares the engine cache.
-- **Sentin8:Bus / Sentin8:MemBus / Sentin8:Sys** — durable change
+- **Sentin8:Bus / Sentin8:MemBus / Sentin8:Sys** - durable change
   delivery (outbox relay), in-process publication, audit ingest, and the
   TLS hostname resolution owner API.
-- **Sentin8:DB (PostgreSQL 18, db `exchange8`, schema `sor`)** — routing
+- **Sentin8:DB (PostgreSQL 18, db `exchange8`, schema `sor`)** - routing
   configuration, routed-order facts, trades and amendments, venue
   charges and slices, outbox, and audit journal; accessed only via the
   service's own role under row-level security.
-- **Platform shell (`sentin8::shell`)** — registration, pool, health,
+- **Platform shell (`sentin8::shell`)** - registration, pool, health,
   drain, allocator; `sentin8-tls` for in-process post-quantum TLS and
   venue mTLS.
 

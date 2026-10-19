@@ -1,4 +1,4 @@
-# Exchange8:SOR — Detailed Design Document
+# Exchange8:SOR - Detailed Design Document
 
 ## 1. Scope & Context
 
@@ -8,20 +8,20 @@ the outbound venue session registry (connections, tokens, marketable
 options, market slices), the banded venue-charge lookup, and routed
 trade records with their amendment flow. It explicitly does **not** own:
 
-- client protocols and sessions — Exchange8:Gateway terminates FIX/OUCH/REST
+- client protocols and sessions - Exchange8:Gateway terminates FIX/OUCH/REST
   and calls SOR with already-authorized orders; SOR authorizes nothing
   about the *client*;
-- matching — the POST phase's internal target re-posts the remainder to
+- matching - the POST phase's internal target re-posts the remainder to
   Exchange8:ME through the Gateway re-post path; SOR never matches;
-- venue market data — Exchange8:VFeeds feeds quotes (STAMP CBBO); SOR
+- venue market data - Exchange8:VFeeds feeds quotes (STAMP CBBO); SOR
   subscribes and consumes;
-- order-entry rate/credit authorization — Exchange8:Risk gates the pipeline
+- order-entry rate/credit authorization - Exchange8:Risk gates the pipeline
   before SOR sees the order;
-- fix protocol/codec internals — `crates/fix`, `crates/fixed`,
+- fix protocol/codec internals - `crates/fix`, `crates/fixed`,
   `crates/stamp` own the engines SOR reuses;
-- trade clearing and routed-trade mirroring — Exchange8:Clearing consumes the
+- trade clearing and routed-trade mirroring - Exchange8:Clearing consumes the
   `exchange8:routing:*` events and persists its own mirror;
-- event durability, audit archival, identity, TLS — platform planes
+- event durability, audit archival, identity, TLS - platform planes
   (Sentin8:Bus, Sentin8:Sys, Sentin8:Auth, `sentin8-tls`, Shield).
 
 ### System context
@@ -34,14 +34,14 @@ graph TD
         VF["Exchange8:VFeeds (STAMP CBBO quotes)"]
         ME["Exchange8:ME (internal post target)"]
         CLR["Exchange8:Clearing (routed-trade mirror)"]
-        REF["Exchange8:RefData (instruments, tick tables — consumed, not owned)"]
+        REF["Exchange8:RefData (instruments, tick tables - consumed, not owned)"]
         VEN["External venues (FIX 4.x)"]
     end
     AUTH["Sentin8:Auth (issuer, JWKS, DCR)"]
     BUSP["Sentin8:Bus (POST /v1/produce)"]
     SYS["Sentin8:Sys (POST /v1/audit, GET /v1/resolve/hostname)"]
     MBP["Sentin8:MemBus (Valkey-backed in-process publication)"]
-    DBX[("PostgreSQL 18 — db exchange8, schema sor")]
+    DBX[("PostgreSQL 18 - db exchange8, schema sor")]
 
     GW -- "route request (normalized order + strategy code)" --> SOR
     SOR -- "re-post remainder (POST phase, via Gateway)" --> ME
@@ -63,11 +63,11 @@ graph TD
 graph TD
     subgraph SORPROC["exchange8-sor binary (axum over sentin8::shell)"]
         HTTPX["HTTP/TLS surface: /v1/health + /v1/admin/policy-sets · /v1/admin/relations · /v1/admin/attributes (Shield admin API)"]
-        REGX["registration.rs — self-description (scope-mirror set, pg role, error code, admin UI pages routing/legs, M2M grants, init SQL)"]
+        REGX["registration.rs - self-description (scope-mirror set, pg role, error code, admin UI pages routing/legs, M2M grants, init SQL)"]
         subgraph DECX["Decision modules (pure, no tokio/DB/clock)"]
-            STRAT["sor.rs — StrategyCode parse · Phase/RouteMode · entry_phase · next_phase · spray_leg"]
-            ROUT["routing.rs — SorPhase ledger variant · select_venues (charge sort) · RoutedLedger (legs/fills/kills/reconcile)"]
-            VENX["venue_sessions.rs — VenueSessions FSM · ResendBuffer · StampCbboAdapter"]
+            STRAT["sor.rs - StrategyCode parse · Phase/RouteMode · entry_phase · next_phase · spray_leg"]
+            ROUT["routing.rs - SorPhase ledger variant · select_venues (charge sort) · RoutedLedger (legs/fills/kills/reconcile)"]
+            VENX["venue_sessions.rs - VenueSessions FSM · ResendBuffer · StampCbboAdapter"]
         end
         FIXX["Outbound venue FIX session tasks (crates/fix engine; per-venue connection)"]
         PERSISTX["Shell persistence (capped pool via sentin8_config::pg_pool, sentin8_set_tenant_context, outbox relay, audit pusher)"]
@@ -77,8 +77,8 @@ graph TD
         POL2["Sentin8:Policy (Shield engine + sentin8_policy_sets)"]
         BUS2X["Sentin8:Bus"]
         SYS2X["Sentin8:Sys"]
-        TLS2X["sentin8-tls — exchange8-sor-tls resolver (GET /v1/resolve/hostname, sentin8:sys:instances:read)"]
-        DBP2[("PostgreSQL 18 — db exchange8, schema sor (role exchange8_sor_service)")]
+        TLS2X["sentin8-tls - exchange8-sor-tls resolver (GET /v1/resolve/hostname, sentin8:sys:instances:read)"]
+        DBP2[("PostgreSQL 18 - db exchange8, schema sor (role exchange8_sor_service)")]
     end
     HTTPX --> ROUT
     ROUT --> STRAT
@@ -99,16 +99,16 @@ graph TD
 
 The binary boots via `sentin8::shell::serve`:
 
-1. `Sentin8Shell::new("exchange8:sor", "EXCHANGE8_SOR")` — registration,
+1. `Sentin8Shell::new("exchange8:sor", "EXCHANGE8_SOR")` - registration,
    allocator, graceful drain under `make upgrade-instance`.
-2. `with_simple_state()` — the shell's standard state handle; outbound
+2. `with_simple_state()` - the shell's standard state handle; outbound
    venue FIX sessions run as **dedicated tasks** (the HTTP router carries
    health and admin endpoints only), driven by the `crates/fix` session
    engine under `VenueSessions` supervision.
 3. `with_router(extend_router)` mounts `/v1/health` (shell) and the
    shared Shield policy-admin API (`/v1/admin/policy-sets*`,
    `/v1/admin/relations*`, `/v1/admin/attributes*`) through
-   `HasPolicyAdmin` — admin and request path share one policy cache.
+   `HasPolicyAdmin` - admin and request path share one policy cache.
 4. `registration::print` serves `--print-registration`: the
    `scope-mirror` Shield set (action `exchange8:sor:decide` over the live
    effective scope set of `exchange8:routing:read`/`exchange8:routing:write`,
@@ -158,13 +158,13 @@ graph TD
     ADMX --> OBX
 ```
 
-### Request lifecycle — order routing decision
+### Request lifecycle - order routing decision
 
 ```mermaid
 sequenceDiagram
     autonumber
     participant GW as Exchange8:Gateway
-    participant AU as Auth verify + Shield (steps 1–5)
+    participant AU as Auth verify + Shield (steps 1-5)
     participant SC as StrategyCode parse
     participant EP as entry_phase / next_phase
     participant SV as select_venues + spray_leg
@@ -186,7 +186,7 @@ sequenceDiagram
             RL->>FS: submit IOC legs / dark pegs (fix_block tags verbatim)
             alt venue rejects / session lost
                 FS-->>RL: leg killed (remaining qty freed for re-route)
-                RL->>RL: on_venue_failure — phase degrades only when venue set exhausted
+                RL->>RL: on_venue_failure - phase degrades only when venue set exhausted
             else venue acks + fills
                 FS-->>RL: ack (Pending→Working) then fills (capped at leg qty, aggregated to parent)
                 Note over RL: parent completes when Σ leg fills ≥ parent qty → Complete
@@ -195,7 +195,7 @@ sequenceDiagram
     end
 ```
 
-### Request lifecycle — venue session lifecycle
+### Request lifecycle - venue session lifecycle
 
 ```mermaid
 sequenceDiagram
@@ -225,7 +225,7 @@ sequenceDiagram
     Note over FIX: ResendBuffer replays unacked outbound messages in order on reconnect
 ```
 
-### Request lifecycle — fill handling and proceeds to clearing
+### Request lifecycle - fill handling and proceeds to clearing
 
 ```mermaid
 sequenceDiagram
@@ -249,7 +249,7 @@ sequenceDiagram
     CLR->>CLR: persist routed-trade mirror (+ amend flow on amendments)
 ```
 
-### Request lifecycle — admin (RFW)
+### Request lifecycle - admin (RFW)
 
 ```mermaid
 sequenceDiagram
@@ -276,10 +276,10 @@ sequenceDiagram
 Schema `sor` in database `exchange8` (database-per-vertical,
 schema-per-service); role `exchange8_sor_service` holds exactly the
 grants in `init.sql` (`search_path = sor, public`; no BYPASSRLS, no
-cross-schema grants — this service owns all its reads). RLS is FORCEd on
+cross-schema grants - this service owns all its reads). RLS is FORCEd on
 every table with `sentin8_context_initialized() AND env_id =
 sentin8_current_env_id()` policies; context is set per connection via
-`SELECT sentin8_set_tenant_context($1)` — always awaited,
+`SELECT sentin8_set_tenant_context($1)` - always awaited,
 transaction-local (`set_config(..., true)`) on the same connection as the
 query.
 
@@ -311,13 +311,13 @@ erDiagram
         uuid env_id FK
         text mic
         text exec_broker_id
-        text slice_id "market-slice key A–Z"
+        text slice_id "market-slice key A-Z"
         text sender_comp_id
         text target_comp_id
         text address
         int port
         int heartbeat_int "default 30"
-        text creds_secret_ref "Sentin8:Secrets reference — never plaintext"
+        text creds_secret_ref "Sentin8:Secrets reference - never plaintext"
         bool hidden
         bool enabled
     }
@@ -370,7 +370,7 @@ erDiagram
     sor_market_slice {
         uuid id PK
         uuid env_id FK
-        char_1 slice_id "A–Z"
+        char_1 slice_id "A-Z"
         text mic
         text symbol_begin
         text symbol_end
@@ -409,47 +409,47 @@ erDiagram
 
 Per-table notes:
 
-- `sor.routing_token` — token→venue mapping (the strategy code's option
+- `sor.routing_token` - token→venue mapping (the strategy code's option
   tables resolve to these tokens). UNIQUE `(env_id, token)`. Env-scoped;
   no secret-bearing columns (`fix_block` is non-sensitive routing tags).
-- `sor.routing_option` — marketable option codes: `option_type` is
+- `sor.routing_option` - marketable option codes: `option_type` is
   CHECK-enforced to `Dark|Lit|Post`; `tokens` carries the venue token
   list; `price_factor` and `dynamic_seq` configure charge/sequence
   behavior; `status` is `E`/`D`. UNIQUE `(env_id, option_code,
   option_type)`.
-- `sor.routing_connection` — outbound session definition per MIC ×
+- `sor.routing_connection` - outbound session definition per MIC ×
   broker × symbol-slice; session pick is
   `find(mic, broker, slice(symbol[0]))`. Credentials ride
-  `creds_secret_ref` (a Sentin8:Secrets reference — never plaintext);
+  `creds_secret_ref` (a Sentin8:Secrets reference - never plaintext);
   `heartbeat_int` drives the supervisor's heartbeat window.
-- `sor.routed_order` — parent facts: order id, strategy code, state.
+- `sor.routed_order` - parent facts: order id, strategy code, state.
   UNIQUE `(env_id, order_id)`.
-- `sor.routed_leg` — child facts: `venue_cl_ord_id` (`<platform_order_id>-
+- `sor.routed_leg` - child facts: `venue_cl_ord_id` (`<platform_order_id>-
   <leg_seq>`), MIC, phase, state, UNIQUE `(routed_order_id, leg_seq)`.
   The in-memory `RoutedLedger` is the working set; these tables are the
   rebuild source (crash recovery).
-- `sor.routing_trade` / `sor.routing_trade_amend` — venue fill facts
+- `sor.routing_trade` / `sor.routing_trade_amend` - venue fill facts
   (`venue_trade_id`, `qty`, `price`, `liquidity A|R`) and their amendment
   trail (`new_qty`, `new_price`, `amended_by`). `liquidity` is
   CHECK-enforced to `A`/`R`. Clearing mirrors these through the
   `exchange8:routing` events, never by table access.
-- `sor.trade_venue_charge` — banded routing charge per MIC × market ×
+- `sor.trade_venue_charge` - banded routing charge per MIC × market ×
   price band (`price_low`..`price_high`, `active`). The cheapest-first
   sort's input.
-- `sor.market_slice` — symbol-letter venue slices (`slice_id` A–Z,
+- `sor.market_slice` - symbol-letter venue slices (`slice_id` A-Z,
   `symbol_begin`..`symbol_end`), UNIQUE `(env_id, slice_id, mic)`.
-- `sor.outbox` — the local outbox (platform `sentin8_outbox` shape): rows
+- `sor.outbox` - the local outbox (platform `sentin8_outbox` shape): rows
   inserted in the same transaction as the domain change (`event_type`,
   `stream_family`, `payload`), `relayed`/`relayed_at`/`relay_attempts`
   maintained by the shell relay, partial index on unrelayed rows, and
   `outbox_notify_trigger` firing `pg_notify('sor_outbox_changed')` for
   relay wake-up.
-- `sor.audit_journal` — the local audit journal (platform `sentin8_audit`
+- `sor.audit_journal` - the local audit journal (platform `sentin8_audit`
   shape): admin/domain actions with before/after states, actor/subject/
   severity/correlation; `pushed`/`pushed_at` track delivery to Sys;
   partial index on unpushed rows.
 - In-memory only: the `RoutedLedger` working set and the
-  `VenueSessions`/`ResendBuffer` states — both restorable from the
+  `VenueSessions`/`ResendBuffer` states - both restorable from the
   durable tables plus venue sequence resets (reconciliation, §6).
 
 ### Routed-order lifecycle (ledger view)
@@ -460,7 +460,7 @@ stateDiagram-v2
     Pending --> Working: venue ack (on_leg_ack)
     Pending --> Killed: venue reject / loss before ack
     Working --> Filled: Σ fills ≥ leg qty (capped at leg qty)
-    Working --> Killed: venue kill/cancel — remaining qty freed for re-route
+    Working --> Killed: venue kill/cancel - remaining qty freed for re-route
     Filled --> [*]: parent Complete when parent Σ fills ≥ parent qty
     Killed --> [*]: no-op if leg already Filled (no-op guard)
 ```
@@ -491,7 +491,7 @@ stateDiagram-v2
 | Admin / Shield | `GET/PUT/DELETE /v1/admin/policy-sets{,/{name},/{name}/test}`, `POST /v1/admin/policy-sets/{enforce,shadow,disable}`, `GET/PUT/DELETE /v1/admin/relations{,/check}`, `GET/PUT/DELETE /v1/admin/attributes` | `exchange8:sor:policy:read` / `exchange8:sor:policy:write` (scope mirror also covers `sentin8:sys:admin`, sys org/env admins) | shared Shield admin API mount (wired in `extend_router`) |
 | Admin (declared) | `GET /v1/admin/ui/routing` + `/v1/admin/routing`; `GET /v1/admin/ui/legs` + `/v1/admin/legs` | role `exchange8:sor:admin` (admin scopes: `exchange8:routing:read`, `exchange8:routing:write`, `exchange8:sor:policy:{read,write}`) | RFW pages `routing` (icon `0xe8d2`), `legs` (icon `0xe5d9`) |
 | Health | `GET /v1/health` | unauthenticated (shell) | liveness for Sentin8:Captain |
-| Error contract | `exchange8_strategy_code_invalid` | — | HTTP 422; the only declared error code |
+| Error contract | `exchange8_strategy_code_invalid` | - | HTTP 422; the only declared error code |
 | Out | Bus `POST /v1/produce` | M2M `sentin8:bus:produce` + `sentin8:bus:consume` | workloads `exchange8:sor`/`sor`; plus `sentin8:stat:measure` |
 | Out | Sys `POST /v1/audit` | M2M `sentin8:sys:audit:write` | workload `sor-audit` |
 | TLS | `GET /v1/resolve/hostname` (Sys owner API) | M2M `sentin8:sys:instances:read` | workload `exchange8-sor-tls` (database-free resolve) |
@@ -499,7 +499,7 @@ stateDiagram-v2
 Emitted events use the `exchange8:{service}:{resource}:{operation}`
 vocabulary (colons only): the `exchange8:routing:*` leg/trade routing
 event family and routed-order lifecycle facts (per-change `event_type`
-mapping into `sor.outbox` — see §10 for the writer surface). Inbound:
+mapping into `sor.outbox` - see §10 for the writer surface). Inbound:
 route/reject requests and leg events from Exchange8:Gateway, quotes from the
 STAMP CBBO feed (VFeeds), posted-order completions re-entering from the
 Gateway re-post path, and Shield policy-set updates via the shared
@@ -531,7 +531,7 @@ sequenceDiagram
             BUSX-->>CLRS: routed trade → Clearing mirror (+ amend trail)
         else venue rejects / session lost
             VEN-->>SORS: reject / disconnect
-            SORS->>SORS: kill leg (remaining freed) — skip venue, degrade phase only on exhaustion
+            SORS->>SORS: kill leg (remaining freed) - skip venue, degrade phase only on exhaustion
             SORS-->>GWY: leg rejected/killed with reason
         end
     else remainder posted internally
@@ -553,13 +553,13 @@ flowchart TD
     A["Routed-ledger change: leg ack / fill / kill, trade row, amendment"] --> B["same-tx INSERT sor.outbox (payload, relayed=false) + pg_notify sor_outbox_changed"]
     B --> C["Shell relay wakes (LISTEN)"]
     C --> D["Read unrelayed rows (partial index idx_sor_outbox_unrelayed)"]
-    D --> E["POST /v1/produce — M2M sentin8:bus:produce, idempotency_key = outbox row id"]
+    D --> E["POST /v1/produce - M2M sentin8:bus:produce, idempotency_key = outbox row id"]
     E -->|2xx| F["UPDATE relayed=true, relayed_at"]
     E -->|network / 5xx| G["relay_attempts++; leave unrelayed; backoff retry"]
     G --> E
     F --> H["Bus stream: exchange8:routing family (XADD)"]
-    H -->|direct consumer| I1["Exchange8:Clearing — routed trade + amend mirror"]
-    H -->|direct consumer| I2["Exchange8:Gateway — session-attached leg events to clients"]
+    H -->|direct consumer| I1["Exchange8:Clearing - routed trade + amend mirror"]
+    H -->|direct consumer| I2["Exchange8:Gateway - session-attached leg events to clients"]
     H -->|subscription| I3["Trigger subscription (consumer group) → function / workflow where declared"]
 ```
 
@@ -604,14 +604,14 @@ flowchart TD
 - **Drain.** `sentin8::shell` graceful drain integrates with
   `make upgrade-instance`: the replacement instance reaches `Active`
   before the old drains in-flight routing work and flushes outstanding
-  outbox/journal rows — venue sessions and per-order tasks stop on the
+  outbox/journal rows - venue sessions and per-order tasks stop on the
   drained instance, and the recovery paths (§6) absorb the boundary.
 - **TLS posture.** In-process TLS via `sentin8-tls` (post-quantum
   X25519MLKEM768 / ML-DSA-65) for both the platform surface and outbound
   venue FIX (mTLS; logon credentials as secret refs, per-connection
   submission audit). The DB-free resolver workload `exchange8-sor-tls`
   resolves hostnames through the Sys owner API
-  (`GET /v1/resolve/hostname`, scope `sentin8:sys:instances:read`) — no
+  (`GET /v1/resolve/hostname`, scope `sentin8:sys:instances:read`) - no
   platform-database DSN for resolution, no BYPASSRLS anywhere in the
   grant set.
 
@@ -621,24 +621,24 @@ flowchart TD
 fatal: selection proceeds on the remaining up venues, and the phase
 degrades only when its venue set is exhausted. A strategy code that
 cannot parse is rejected before any leg exists. Unknown venues,
-malformed feed frames, and duplicate session events degrade — never
+malformed feed frames, and duplicate session events degrade - never
 panic, never silently route.
 
 ```mermaid
 flowchart TD
     REQ["route request / ledger event"] --> CTX{"tenant context + Shield"}
-    CTX -->|deny / no context| R403["403 — fail-closed"]
+    CTX -->|deny / no context| R403["403 - fail-closed"]
     CTX -->|ok| CODE{"code parses? (9 digits, options resolve, mode ok)"}
-    CODE -->|no| R422["422 exchange8_strategy_code_invalid — no leg created"]
+    CODE -->|no| R422["422 exchange8_strategy_code_invalid - no leg created"]
     CODE -->|ok| SES{"venue session Up + fillable top?"}
-    SES -->|down / empty| SKP["skip venue — selection continues on remaining venues"]
+    SES -->|down / empty| SKP["skip venue - selection continues on remaining venues"]
     SKP --> EXH{"phase venue set exhausted?"}
     EXH -->|no| SES
-    EXH -->|yes| DEG["phase degrades (advance) — RADAR→SPRAY→SEQUENTIAL→POST"]
+    EXH -->|yes| DEG["phase degrades (advance) - RADAR→SPRAY→SEQUENTIAL→POST"]
     SES -->|yes| SUB["submit leg IOC/dark peg (ResendBuffer holds until ack)"]
     SUB --> ECH{"execution echo"}
-    ECH -->|fill| CAP["credit min(report, leg remaining) — aggregate to parent"]
-    ECH -->|reject / loss| KIL["kill leg — remaining freed for re-route"]
+    ECH -->|fill| CAP["credit min(report, leg remaining) - aggregate to parent"]
+    ECH -->|reject / loss| KIL["kill leg - remaining freed for re-route"]
     KIL --> SES
     CAP --> OB{"same-tx outbox INSERT ok?"}
     OB -->|no| RET["retry with the domain step; no partial delivery"]
@@ -656,12 +656,12 @@ flowchart TD
   `routing_connection`.
 - **Venue fill echo lost.** Drop-detect dedup per session plus venue
   resend on reconnect (ResendBuffer). Over-reported or duplicated echoes
-  credit at most the leg remainder — the parent aggregate converges to
+  credit at most the leg remainder - the parent aggregate converges to
   the leg's true quantity.
 - **SOR instance crash.** Routed orders rebuild from
   `sor.routed_order`/`sor.routed_leg` (the ledger is the working set);
-  `reconcile()` surfaces unacked legs — the recovery
-  cancel-sweep set — and orphaned legs (legs whose parent is missing) as
+  `reconcile()` surfaces unacked legs - the recovery
+  cancel-sweep set - and orphaned legs (legs whose parent is missing) as
   explicit anomaly views. Incomplete legs are reconciled by a venue
   cancel sweep; orphans fail closed to operations review.
 - **Quote staleness.** Phases requiring the CBBO (RADAR entry, SPRAY
@@ -672,9 +672,9 @@ flowchart TD
   (`relay_attempts` grows); the partial index replays them in
   `created_at` order when the Bus recovers; `idempotency_key = row id`
   makes replay safe; failed deliveries land in the DLQ for manual
-  replay — never silently dropped.
+  replay - never silently dropped.
 - **Sys audit outage.** `sor.audit_journal` rows stay unpushed; the
-  pusher retries — audit is delayed, never lost.
+  pusher retries - audit is delayed, never lost.
 
 Recovery sequence (instance start after a drained predecessor):
 
@@ -767,9 +767,9 @@ Always-true conditions:
 5. The phase arc only advances (RADAR → SPRAY → SEQUENTIAL → POST;
    ledger terminals `Complete`/`Killed`); no backward transitions.
 6. Strategy codes are totally validated before routing: exactly 9
-   digits, all three option codes resolve, mode digit `0–3`, and mode 0
-   carries an empty lit list — invalid codes leave no legs.
-7. Identical inputs (candidates, quantity) produce identical leg plans —
+   digits, all three option codes resolve, mode digit `0-3`, and mode 0
+   carries an empty lit list - invalid codes leave no legs.
+7. Identical inputs (candidates, quantity) produce identical leg plans -
    the `(charge, venue)` stable sort is deterministic across runs.
 8. Outbox rows are inserted in the same transaction as the domain
    change; delivery is idempotent per row id; audit rows are delivered
@@ -802,11 +802,11 @@ determinism are enforced by the type system.
 
 ```mermaid
 graph TD
-    U["Unit tests — sor.rs code matrix (parse/entry/transition/sizing), routing.rs phases+ledger+reconciliation, venue_sessions.rs FSM+resend+STAMP adapter"]
-    P["Policy wiring tests — tests/policy.rs (pure, no DB)"]
-    S["SQL integration (RLS matrix) — tests/sql_matrix.rs (live DB, exchange8_probe NOBYPASSRLS role)"]
-    G["Workspace suites — shell wiring, vertical enroll, wire/event parity"]
-    E2EUI["E2E UI — platform tests (out of this unit)"]
+    U["Unit tests - sor.rs code matrix (parse/entry/transition/sizing), routing.rs phases+ledger+reconciliation, venue_sessions.rs FSM+resend+STAMP adapter"]
+    P["Policy wiring tests - tests/policy.rs (pure, no DB)"]
+    S["SQL integration (RLS matrix) - tests/sql_matrix.rs (live DB, exchange8_probe NOBYPASSRLS role)"]
+    G["Workspace suites - shell wiring, vertical enroll, wire/event parity"]
+    E2EUI["E2E UI - platform tests (out of this unit)"]
     U --> S
     P --> S
     G --> E2EUI
@@ -831,7 +831,7 @@ graph TD
   event idempotence, resend hold/ack/replay in order, STAMP CBBO frame
   parsing (malformed skip, zero-side handling).
 - **Policy wiring tests** (`tests/policy.rs`, no DB): the *actual*
-  seeded `SCOPE_MIRROR_POLICIES` text loads the engine — no-set deny,
+  seeded `SCOPE_MIRROR_POLICIES` text loads the engine - no-set deny,
   enforced no-match deny, shadow never blocks (would-deny reported),
   mirror permits its own grants, M2M parity, platform-admin scopes pass,
   forbid-beats-permit, role-keyed tenant sets decide, cross-env set
@@ -841,12 +841,12 @@ graph TD
   as the `exchange8_probe` NOBYPASSRLS role): every table declared in
   this service's `init.sql` exists with FORCE RLS + policies; zero rows
   without context; insert without context rejected (savepoint-guarded);
-  own-env probe row visible exactly once; cross-env zero rows — one
+  own-env probe row visible exactly once; cross-env zero rows - one
   rolled-back transaction (zero residue; skips silently offline).
 - **Deliberately not tested here:** venue simulators / FIX-mock fill and
   reject drills (the vertical's venue-simulator suites once the FIX
   drive is wired), platform token-verification internals, MemBus/Bus/Sys
-  wire formats, RFW rendering, and Flutter surfaces — platform-owned
+  wire formats, RFW rendering, and Flutter surfaces - platform-owned
   suites (the platform testing strategy doc); E2E UI lives at platform
   level.
 

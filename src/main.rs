@@ -3,7 +3,7 @@
 // SPDX-FileCopyrightText: Copyright Contributors to the Exchange8:SOR
 // SPDX-License-Identifier: Apache-2.0
 
-//! Exchange8:SOR service binary — smart order routing.
+//! Exchange8:SOR service binary - smart order routing.
 //!
 //! Design: `services/sor/DESIGN.md`. Core logic in the sibling modules;
 //! this shell wires the tokio HTTP/TLS surface via the platform
@@ -24,7 +24,7 @@ fn extend_router(
     _state: std::sync::Arc<sentin8::shell::AppState>,
 ) -> axum::Router<std::sync::Arc<sentin8::shell::AppState>> {
     // ── Sentin8:Policy admin API (shared implementation; the shell
-    // AppState already implements HasPolicyAdmin) — see DESIGN.md §2.
+    // AppState already implements HasPolicyAdmin) - see DESIGN.md §2.
     sentin8::shell::mount_policy_admin(
         // Outbound venue FIX sessions are dedicated tasks (see DESIGN.md
         // §2); the HTTP router carries health + admin endpoints only.

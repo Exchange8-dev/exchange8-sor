@@ -5,7 +5,7 @@
 
 //! Exchange8:SOR strategy-code parser + phase state machine.
 //!
-//! Strategy code = 9 digits: `[DD][C][LLLL][PP]` — dark option (2), mode
+//! Strategy code = 9 digits: `[DD][C][LLLL][PP]` - dark option (2), mode
 //! selector (1), lit option (4), post option (2).
 //!
 //! Design: `services/sor/DESIGN.md` §2 (decision modules).
@@ -48,7 +48,7 @@ pub enum Phase {
 /// Route mode from strategy digit 3 (`opt[2]`).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum RouteMode {
-    /// No routing — internal only.
+    /// No routing - internal only.
     None,
     /// Spray phases.
     Spray,

@@ -55,7 +55,7 @@ async fn health() {}
     components(schemas()),
     security(),
     tags(
-        (name = "sor", description = "Exchange8:Sor — policy admin + health only"),
+        (name = "sor", description = "Exchange8:Sor - policy admin + health only"),
         (name = "policy", description = "Shield policy administration (shared surface)"),
     ),
 )]

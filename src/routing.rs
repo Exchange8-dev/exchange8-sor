@@ -3,12 +3,12 @@
 // SPDX-FileCopyrightText: Copyright Contributors to the Exchange8:SOR
 // SPDX-License-Identifier: Apache-2.0
 
-//! Exchange8:SOR routing internals (see DESIGN.md §2–§3).
+//! Exchange8:SOR routing internals (see DESIGN.md §2-§3).
 //!
 //! - **Phase machine**: the full RADAR → SPRAY → SEQUENTIAL → POST arc
 //!   with venue-failure transitions.
 //! - **Venue-charge-sorted selection**: stable sort by venue charge
-//!   (ties broken by venue id — deterministic routing).
+//!   (ties broken by venue id - deterministic routing).
 //! - **Routed-order ledger + leg reconciliation**: parent/leg state
 //!   tracking, fill aggregation, orphans (legs without a parent) and
 //!   unacked legs (cancel sweep on recovery).
@@ -19,7 +19,7 @@ use std::collections::HashMap;
 
 use exchange8::fixed::Qty;
 
-/// SOR phase (matches sor.rs `Phase` — restated for the ledger's own
+/// SOR phase (matches sor.rs `Phase` - restated for the ledger's own
 /// state machine with failure transitions).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum SorPhase {
@@ -44,7 +44,7 @@ impl SorPhase {
         }
     }
 
-    /// Venue-session failure transition (see DESIGN.md §6 — "skip venue";
+    /// Venue-session failure transition (see DESIGN.md §6 - "skip venue";
     /// the phase itself degrades only when the phase's venue set is
     /// exhausted).
     pub fn on_venue_failure(self, remaining_venues: usize) -> SorPhase {
@@ -73,7 +73,7 @@ pub struct VenueCandidate {
 }
 
 /// Charge-sorted venue selection: filter up-venues with fillable
-/// qty, stable sort by (charge, venue) — deterministic and
+/// qty, stable sort by (charge, venue) - deterministic and
 /// charge-minimal. Ties break by venue id (stable order across runs).
 pub fn select_venues(candidates: &[VenueCandidate], need: Qty) -> Vec<&VenueCandidate> {
     let mut eligible: Vec<&VenueCandidate> = candidates
@@ -96,7 +96,7 @@ pub fn select_venues(candidates: &[VenueCandidate], need: Qty) -> Vec<&VenueCand
 }
 
 // ---------------------------------------------------------------------------
-// routed-order ledger + leg reconciliation (DESIGN.md §2–§3)
+// routed-order ledger + leg reconciliation (DESIGN.md §2-§3)
 // ---------------------------------------------------------------------------
 
 /// Leg lifecycle state.
@@ -236,8 +236,8 @@ impl RoutedLedger {
         Some(p.phase)
     }
 
-    /// Reconciliation (recovery views — see DESIGN.md §6): unacked legs —
-    /// the cancel sweep set; filled-but-unparented — orphans.
+    /// Reconciliation (recovery views - see DESIGN.md §6): unacked legs -
+    /// the cancel sweep set; filled-but-unparented - orphans.
     pub fn reconcile(&self) -> (Vec<u64>, Vec<u64>) {
         let unacked: Vec<u64> = self
             .legs
@@ -306,8 +306,8 @@ mod tests {
             cand("CHIC", 30, true, 100),
             cand("AEQA", 10, true, 100),
             cand("XTSE", 20, true, 100),
-            cand("DOWN", 1, false, 100), // session down — excluded
-            cand("EMPTY", 1, true, 0),   // no fillable — excluded
+            cand("DOWN", 1, false, 100), // session down - excluded
+            cand("EMPTY", 1, true, 0),   // no fillable - excluded
         ];
         let sel = select_venues(&cands, Qty::units(250));
         let venues: Vec<&str> = sel.iter().map(|c| c.venue.as_str()).collect();
@@ -383,7 +383,7 @@ mod tests {
         let mut led = RoutedLedger::new();
         led.open_parent(1, Qty::units(100));
         let l1 = led.route_leg(1, "XTSE", Qty::units(100)).unwrap();
-        // Venue echoes 150 on a 100 leg (drop-detect case) — cap at 100.
+        // Venue echoes 150 on a 100 leg (drop-detect case) - cap at 100.
         let (leg_done, parent_done) = led.on_leg_fill(l1, Qty::units(150)).unwrap();
         assert!(leg_done && parent_done);
         assert_eq!(led.parent(1).unwrap().filled.raw, 100);

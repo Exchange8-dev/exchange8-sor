@@ -5,7 +5,7 @@
 
 //! Exchange8:SOR outbound venue sessions + VFeeds STAMP CBBO adapter.
 //!
-//! - **Venue sessions**: outbound venue FIX sessions — the session
+//! - **Venue sessions**: outbound venue FIX sessions - the session
 //!   supervisor state (per-venue logon/heartbeat/test-request/queue
 //!   states) + the resend buffer the `crates/fix` engine drives. Venue
 //!   down → skip (routing continues on remaining venues, DESIGN.md §6).
@@ -32,9 +32,9 @@ pub enum VenueSessionState {
     LoggingOn,
     /// Logged on, heartbeats flowing.
     Up,
-    /// Missed heartbeat window — test-request probe in flight.
+    /// Missed heartbeat window - test-request probe in flight.
     Probing,
-    /// Down (logon rejected / disconnect / probe failed) — routing skips.
+    /// Down (logon rejected / disconnect / probe failed) - routing skips.
     Down,
 }
 
@@ -131,7 +131,7 @@ impl ResendBuffer {
             .push((seq, msg));
     }
 
-    /// Venue acked through `seq` — drop covered messages.
+    /// Venue acked through `seq` - drop covered messages.
     pub fn on_ack(&mut self, venue: &str, seq: u64) {
         if let Some(buf) = self.buffers.get_mut(venue) {
             buf.retain(|(s, _)| *s > seq);
@@ -149,7 +149,7 @@ impl ResendBuffer {
 // ---------------------------------------------------------------------------
 
 /// Normalized quote event (vfeeds adapters.rs shape, restated locally for
-/// the stamp adapter module's self-containment — the shell unifies).
+/// the stamp adapter module's self-containment - the shell unifies).
 #[derive(Clone, Debug, PartialEq)]
 pub struct StampQuote {
     pub instrument_id: u32,

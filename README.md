@@ -3,10 +3,10 @@
 ## 1. Summary
 
 Exchange8:SOR (service type `exchange8:sor`, binary `exchange8-sor`) is the
-**smart order router** of the exchange8 vertical — the capital-markets
+**smart order router** of the exchange8 vertical - the capital-markets
 tier of the Sentin8 platform. It routes orders to external venues and
 home again: it consumes routing requests from Exchange8:Gateway, interprets the
-**9-digit strategy code** (`[DD][C][LLLL][PP]` — dark option, mode
+**9-digit strategy code** (`[DD][C][LLLL][PP]` - dark option, mode
 selector, lit option, post option), walks venue liquidity through the
 phase arc **RADAR → SPRAY → SEQUENTIAL → POST** (dark midpoint pegs, a
 parallel IOC sweep priced at the consolidated best bid/offer, a one-venue-
@@ -19,10 +19,10 @@ FIX 4.x links (logon, heartbeat, test-request probes, resend buffers);
 quotes arrive as TSX **STAMP CBBO** frames normalized to consolidated
 top-of-book events.
 
-The service core is a set of pure, deterministic modules — the strategy
+The service core is a set of pure, deterministic modules - the strategy
 code parser (`sor.rs`), the phase machine and routed-order ledger
 (`routing.rs`), and the venue session supervisor + feed adapter
-(`venue_sessions.rs`) — wrapped in the shared Sentin8 platform shell
+(`venue_sessions.rs`) - wrapped in the shared Sentin8 platform shell
 (`sentin8::shell`): axum HTTP/TLS surface, `--print-registration`
 self-description, DB pool, `/v1/health`, the Shield (declarative-policy)
 egress is the platform trio: in-process MemBus publication, the local
@@ -34,7 +34,7 @@ to Sentin8:Sys. Persistence is database `exchange8`, schema `sor`, role
 
 - **One order, many venues, one ledger.** Participants think in parent
   orders; venues see independent child legs. The routed-order ledger
-  binds parents to legs across the whole phase arc — fills aggregate
+  binds parents to legs across the whole phase arc - fills aggregate
   upward, kills free quantity downward, and every leg is traceable to its
   parent under audit.
 - **Best-price-plus-cost routing.** Venue selection is a deterministic,
@@ -44,7 +44,7 @@ to Sentin8:Sys. Persistence is database `exchange8`, schema `sor`, role
 - **Phased liquidity capture without guesswork.** The strategy code is a
   compact, validation-gated encoding of a full execution policy: dark
   access, spray breadth, sequential price walking, and post behavior.
-  Validation is total — a code that does not parse never routes
+  Validation is total - a code that does not parse never routes
   (`exchange8_strategy_code_invalid`, HTTP 422).
 - **Sessions are first-class routing inputs.** A venue whose session is
   not `Up` is not a venue: the router skips it and continues on the
@@ -68,7 +68,7 @@ reconciliation, `venue_sessions.rs` session FSM + resend buffer + STAMP
 adapter), the shell wiring (`main.rs` mounts health + the shared Shield
 policy-admin API; outbound venue FIX sessions run as dedicated tasks, and
 the HTTP router carries health and admin endpoints only), and the data
-plane (`sql/init.sql` — schema `sor` on database `exchange8`).
+plane (`sql/init.sql` - schema `sor` on database `exchange8`).
 
 ```mermaid
 graph TD
@@ -84,19 +84,19 @@ graph TD
     subgraph SOR["Exchange8:SOR process (exchange8-sor)"]
         HTTP["axum surface: /v1/health + Shield admin API (/v1/admin/policy-sets, /v1/admin/relations, /v1/admin/attributes)"]
         DEC["Decision core: StrategyCode parse · entry_phase / next_phase · spray_leg · select_venues (charge sort)"]
-        LED["routing.rs — SorPhase + RoutedLedger (parents, legs, fills, reconcile)"]
-        SES["venue_sessions.rs — VenueSessions FSM · ResendBuffer · StampCbboAdapter"]
+        LED["routing.rs - SorPhase + RoutedLedger (parents, legs, fills, reconcile)"]
+        SES["venue_sessions.rs - VenueSessions FSM · ResendBuffer · StampCbboAdapter"]
         FIXT["Outbound venue FIX session tasks (per venue; crates/fix engine)"]
         PERSIST["Shell persistence: capped pool · sentin8_set_tenant_context · outbox relay · audit pusher"]
-        REG["registration.rs — scope-mirror Shield set, pg role, M2M grants, RFW pages routing/legs, error codes"]
+        REG["registration.rs - scope-mirror Shield set, pg role, M2M grants, RFW pages routing/legs, error codes"]
     end
 
     subgraph Platform["Sentin8 platform planes"]
         AUTHPL["Sentin8:Auth (identity plane, DCR, M2M)"]
-        SHIELD["Sentin8:Policy (Shield) — policy-sets cache"]
-        BUS["Sentin8:Bus — POST /v1/produce"]
-        SYSPL["Sentin8:Sys — POST /v1/audit + GET /v1/resolve/hostname"]
-        TLSP["sentin8-tls — exchange8-sor-tls resolver workload"]
+        SHIELD["Sentin8:Policy (Shield) - policy-sets cache"]
+        BUS["Sentin8:Bus - POST /v1/produce"]
+        SYSPL["Sentin8:Sys - POST /v1/audit + GET /v1/resolve/hostname"]
+        TLSP["sentin8-tls - exchange8-sor-tls resolver workload"]
     end
 
     DB[("db exchange8, schema sor: routing_token · routing_option · routing_connection · routed_order · routed_leg · routing_trade (+ _amend) · trade_venue_charge · market_slice · outbox · audit_journal")]
@@ -136,12 +136,12 @@ buffers, and the STAMP CBBO adapter. The broker-less FIX engine lives in
 ## 4. Key Traits and Data Structures
 
 - **`StrategyCode` (strategy encoding).** A 9-digit ASCII string
-  `[DD][C][LLLL][PP]`: dark-option code (digits 1–2), mode selector
+  `[DD][C][LLLL][PP]`: dark-option code (digits 1-2), mode selector
   (digit 3: `0` none · `1` spray · `2` sequential · `3` spray+sequential),
-  lit-option code (digits 4–7), post-option code (digits 8–9). Parsing
+  lit-option code (digits 4-7), post-option code (digits 8-9). Parsing
   resolves each option code against caller-supplied token tables and
   fails on unknown codes, wrong length, non-digits, a mode digit outside
-  `0–3`, or a non-empty lit list under mode `0`. A post option of `0`
+  `0-3`, or a non-empty lit list under mode `0`. A post option of `0`
   means "no post venue" (internal re-post only).
 - **Phase machine (`Phase`, `entry_phase`, `next_phase`, `spray_leg`).**
   Entry rules: post-only strategies start at POST; RADAR requires a dark
@@ -163,7 +163,7 @@ buffers, and the STAMP CBBO adapter. The broker-less FIX engine lives in
 - **Venue-charge selection (`VenueCandidate`, `select_venues`).** One
   candidacy per venue (venue, routing charge, session-up flag, fillable
   quantity). Selection filters to up venues with fillable quantity,
-  stable-sorts by `(charge, venue)` — deterministic across runs — and
+  stable-sorts by `(charge, venue)` - deterministic across runs - and
   takes the cheapest set until the requested quantity is covered
   (minimal fan-out).
 - **Venue session supervision (`VenueSessions`, `ResendBuffer`).** One
@@ -184,7 +184,7 @@ buffers, and the STAMP CBBO adapter. The broker-less FIX engine lives in
   flag, enable state), `sor.routing_connection` (per MIC × broker ×
   symbol-slice session: comp ids, address/port, heartbeat, credentials as
   a secrets reference), `sor.market_slice` (first-symbol-letter venue
-  partitioning A–Z), `sor.trade_venue_charge` (per MIC × market × price
+  partitioning A-Z), `sor.trade_venue_charge` (per MIC × market × price
   band routing charge), and the routed-order facts (`sor.routed_order`,
   `sor.routed_leg`, `sor.routing_trade`, `sor.routing_trade_amend`).
 
@@ -200,7 +200,7 @@ buffers, and the STAMP CBBO adapter. The broker-less FIX engine lives in
   and coroutine-based walkers (harder to rebuild after a crash).
 - **Charge-sorted selection with deterministic tie-breaks.** Stable sort
   by charge with venue id as the tie-breaker makes identical inputs yield
-  identical leg plans — a reproducibility requirement (same
+  identical leg plans - a reproducibility requirement (same
   quote/order sequence ⇒ same leg plan), at the cost of a small sort per
   route decision. Rejected: hash-ordered or arrival-ordered venue
   iteration (nondeterministic leg plans, untestable).
@@ -211,7 +211,7 @@ buffers, and the STAMP CBBO adapter. The broker-less FIX engine lives in
   true size regardless of duplicate or over-reported echoes.
 - **Saturating, idempotent reconciliation.** `reconcile()` derives the
   recovery set (unacked legs, orphans) from the ledger contents rather
-  than tracking recovery events separately — one invariant set, no
+  than tracking recovery events separately - one invariant set, no
   special recovery mode.
 - **Session state as a per-venue FSM.** Only `Up` is routable; states
   transition on explicit events and duplicates are no-ops, so the router
@@ -237,7 +237,7 @@ buffers, and the STAMP CBBO adapter. The broker-less FIX engine lives in
   (`next_leg_id` starts at 1 and only increments); the venue-side
   `ClOrdID` scheme is `<platform_order_id>-<leg_seq>` (see DESIGN §3).
 - **Unknown parents reject legs.** `route_leg` refuses legs for a parent
-  that is not open — a leg can never exist without a routed parent,
+  that is not open - a leg can never exist without a routed parent,
   and `reconcile()`'s orphan view is therefore always an anomaly signal.
 - **Unknown venues never route.** A venue absent from the supervisor's
   registry reads as `Down`, so a stale or misspelled venue token in an
@@ -253,17 +253,17 @@ buffers, and the STAMP CBBO adapter. The broker-less FIX engine lives in
   any venue remains, the phase continues on the remaining venues (skip-
   venue semantics).
 - **Mode-0 discipline.** A none-mode strategy must carry an empty lit
-  token list; otherwise the code parses as invalid — no strategy can
+  token list; otherwise the code parses as invalid - no strategy can
   declare routing phases it will never execute.
 - **Frame tolerance.** The STAMP adapter skips malformed lines and
   frames, treats zero/negative prices as "no side", and defaults missing
-  sequence numbers to `0` — a feed hiccup never panics nor injects bogus
+  sequence numbers to `0` - a feed hiccup never panics nor injects bogus
   quotes.
 
 ## 7. Unresolved Questions / Future Designs
 
 - The route-request ingestion surface (the Gateway → SOR decision
-  entrypoint and its handler wiring into the axum router) — the decision
+  entrypoint and its handler wiring into the axum router) - the decision
   modules, the Shield action (`exchange8:sor:decide`), and the error
   contract exist; the HTTP/event mount is the open integration point
   (DESIGN §10).
@@ -273,7 +273,7 @@ buffers, and the STAMP CBBO adapter. The broker-less FIX engine lives in
   binary (the comment in `main.rs` marks FIX sessions as dedicated
   tasks; the task spawn is pending).
 - Per-change `event_type` emission into `sor.outbox` for the routed
-  order/leg lifecycle (the `exchange8:routing:*` family) — schema and
+  order/leg lifecycle (the `exchange8:routing:*` family) - schema and
   relay are in place; the writer is the remaining work.
 - Declared admin surfaces (`/v1/admin/routing`, `/v1/admin/legs` with
   their RFW pages) and the session-management/sequence-reset operations:
