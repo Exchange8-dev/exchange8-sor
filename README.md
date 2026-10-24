@@ -288,4 +288,4 @@ buffers, and the STAMP CBBO adapter. The broker-less FIX engine lives in
 
 ---
 
-**Design attribution:** exchange8:sor and its underlying concepts were designed by Hamid Jahanzad <Hamid@Jahanzad.com>.
+**Architecture & Design:** exchange8:sor and its underlying concepts were designed by [Hamid Jahanzad](https://www.linkedin.com/in/hamidjahanzad/).
