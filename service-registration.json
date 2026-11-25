@@ -6,7 +6,8 @@
       "telemetry_property": {
         "slug": "sor",
         "name": "Exchange8:SOR Telemetry"
-      }
+      },
+      "exposure": "internal"
     }
   ]
 }
